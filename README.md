@@ -241,7 +241,7 @@ PORT=8000
 
 ## Running the Assistant
 
-### Option 1: Interactive Terminal CLI
+### Interactive Terminal CLI
 
 Run the CLI for real-time natural language interaction with interactive Human-in-the-Loop prompts:
 
@@ -272,8 +272,6 @@ Submitting decision: APPROVED...
 Assistant: ACTION EXECUTED (APPROVED):
 Email sent successfully via SMTP.
 ```
-
----
 
 ---
 
