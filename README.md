@@ -12,40 +12,40 @@ This is **NOT a simple chatbot** and **NOT just a wrapper around API endpoints**
 
 ```mermaid
 graph TD
-    User([👤 User / Client]) --> |Natural Language Query| InputLayer[Input Interface: CLI / REST API]
-    InputLayer --> |Initialize AgentState| StateGraph[LangGraph StateGraph Engine]
+    User["User / Client"] --> |"Natural Language Query"| InputLayer["Input Interface: CLI / REST API"]
+    InputLayer --> |"Initialize AgentState"| StateGraph["LangGraph StateGraph Engine"]
     
-    subgraph LangGraph Orchestration Engine
-        StateGraph --> IntentNode[1. Intent Classifier Node]
-        IntentNode --> |Conditional Router| DomainRouter{Route Intent}
+    subgraph Orchestration Engine
+        StateGraph --> IntentNode["1. Intent Classifier Node"]
+        IntentNode --> |"Conditional Router"| DomainRouter{"Route Intent"}
         
-        DomainRouter --> |READ / DRAFT / SEND EMAIL| EmailAgent[2. Email Sub-Agent Node]
-        DomainRouter --> |SCHEDULE / CHECK CALENDAR| CalendarAgent[3. Calendar Sub-Agent Node]
-        DomainRouter --> |DAILY PLAN / GENERAL| PlannerAgent[4. Planner Sub-Agent Node]
+        DomainRouter --> |"READ / DRAFT / SEND EMAIL"| EmailAgent["2. Email Sub-Agent Node"]
+        DomainRouter --> |"SCHEDULE / CHECK CALENDAR"| CalendarAgent["3. Calendar Sub-Agent Node"]
+        DomainRouter --> |"DAILY PLAN / GENERAL"| PlannerAgent["4. Planner Sub-Agent Node"]
         
-        EmailAgent --> |Check Mutating Action| CheckMutating1{Approval Required?}
-        CalendarAgent --> |Check Mutating Action| CheckMutating2{Approval Required?}
+        EmailAgent --> |"Check Mutating Action"| CheckMutating1{"Approval Required?"}
+        CalendarAgent --> |"Check Mutating Action"| CheckMutating2{"Approval Required?"}
         
-        CheckMutating1 --> |Yes: SEND_EMAIL| ApprovalNode[5. Human-in-the-Loop Approval Node]
-        CheckMutating2 --> |Yes: CREATE_EVENT| ApprovalNode
+        CheckMutating1 --> |"Yes: SEND_EMAIL"| ApprovalNode["5. Human-in-the-Loop Approval Node"]
+        CheckMutating2 --> |"Yes: CREATE_EVENT"| ApprovalNode
         
-        CheckMutating1 --> |No| EndNode([🏁 END State])
-        CheckMutating2 --> |No| EndNode
+        CheckMutating1 --> |"No"| EndNode["END State"]
+        CheckMutating2 --> |"No"| EndNode
         PlannerAgent --> EndNode
         
-        ApprovalNode --> |Native interrupt()| HITLGate[⚠️ Human Approval Gate]
-        HITLGate --> |Command(resume='APPROVED')| ExecuteAction[Execute Mutating Tool]
-        HITLGate --> |Command(resume='REJECTED')| CancelAction[Cancel Mutating Action]
+        ApprovalNode --> |"Native interrupt"| HITLGate["Human Approval Gate"]
+        HITLGate --> |"Command resume APPROVED"| ExecuteAction["Execute Mutating Tool"]
+        HITLGate --> |"Command resume REJECTED"| CancelAction["Cancel Mutating Action"]
         
         ExecuteAction --> EndNode
         CancelAction --> EndNode
     end
 
-    subgraph Service Layer (Clean Architecture)
-        ExecuteAction --> |SMTP TLS / Local DB| EmailService[Email Service Layer]
-        ExecuteAction --> |Local DB / Calendar| CalendarService[Calendar Service Layer]
-        EmailAgent --> |IMAP SSL / Local DB| EmailService
-        CalendarAgent --> |Free/Busy Engine| CalendarService
+    subgraph Service Layer Clean Architecture
+        ExecuteAction --> |"SMTP TLS / Local DB"| EmailService["Email Service Layer"]
+        ExecuteAction --> |"Local DB / Calendar"| CalendarService["Calendar Service Layer"]
+        EmailAgent --> |"IMAP SSL / Local DB"| EmailService
+        CalendarAgent --> |"Free/Busy Engine"| CalendarService
     end
 ```
 
@@ -57,27 +57,26 @@ graph TD
 sequenceDiagram
     autonumber
     actor User
-    participant CLI/API
-    participant IntentClassifier
-    participant EmailAgent
-    participant CalendarAgent
-    participant HITLApprovalNode
-    participant EmailService
+    participant CLI as CLI / REST API
+    participant IntentClassifier as Intent Classifier
+    participant EmailAgent as Email Agent Node
+    participant HITLNode as HITL Approval Node
+    participant EmailService as Email Service Layer
 
-    User->>CLI/API: "Send an email to swayam.kandarkar@student.sfit.ac.in saying I'll not attend today's lecture"
-    CLI/API->>IntentClassifier: Initialize AgentState(user_query)
-    IntentClassifier->>IntentClassifier: Classify Intent → SEND_EMAIL
-    IntentClassifier->>EmailAgent: Transition State (detected_intent="SEND_EMAIL")
-    EmailAgent->>EmailAgent: Extract recipient email & custom message body
-    EmailAgent->>HITLApprovalNode: Prepare pending_action & set approval_required=True
-    HITLApprovalNode->>CLI/API: Trigger native interrupt() & pause state
-    CLI/API-->>User: ⚠️ Prompt for Approval: Recipient, Subject, Body (y/n)
-    User->>CLI/API: Approves action ('y')
-    CLI/API->>HITLApprovalNode: Command(resume={"approval_status": "APPROVED"})
-    HITLApprovalNode->>EmailService: Execute send_email_tool (SMTP TLS)
-    EmailService-->>HITLApprovalNode: Return execution confirmation
-    HITLApprovalNode-->>CLI/API: Return final state (final_response)
-    CLI/API-->>User: ✅ Email Sent Successfully!
+    User->>CLI: Send email to user@domain.com saying I will not attend
+    CLI->>IntentClassifier: Initialize AgentState(user_query)
+    IntentClassifier->>IntentClassifier: Classify Intent -> SEND_EMAIL
+    IntentClassifier->>EmailAgent: Transition State (detected_intent=SEND_EMAIL)
+    EmailAgent->>EmailAgent: Extract recipient email & message body
+    EmailAgent->>HITLNode: Set pending_action & approval_required=True
+    HITLNode->>CLI: Trigger native interrupt and pause state
+    CLI-->>User: Prompt for Approval: Recipient, Subject, Body (y/n)
+    User->>CLI: Approves action (y)
+    CLI->>HITLNode: Command resume approval_status=APPROVED
+    HITLNode->>EmailService: Execute send_email_tool (SMTP TLS)
+    EmailService-->>HITLNode: Return execution confirmation
+    HITLNode-->>CLI: Return final state (final_response)
+    CLI-->>User: Email Sent Successfully!
 ```
 
 ---
