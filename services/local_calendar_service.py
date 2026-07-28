@@ -1,26 +1,34 @@
+import os
+import json
 import uuid
 from datetime import datetime, timedelta
 from typing import List, Dict, Any, Optional
 from services.real_calendar_service import real_calendar_service
 
+DATA_FILE = os.path.join(os.path.dirname(os.path.dirname(__file__)), "calendar_data.json")
+
 class LocalCalendarService:
     """
-    In-memory calendar service enhanced with 1-click Google Calendar sync links.
-    Handles schedule viewing, free/busy slot detection, and event creation.
+    Persistent local calendar service enhanced with 1-click Google Calendar sync links.
+    Saves created events to disk (calendar_data.json) so they persist across process restarts.
     """
     def __init__(self):
+        self._events: List[Dict[str, Any]] = []
+        self._reminders: List[Dict[str, Any]] = []
+        self._load_from_disk()
+
+    def _load_from_disk(self):
+        """Load stored calendar events from disk or seed defaults if file doesn't exist."""
         now = datetime.now()
         today_str = now.strftime("%Y-%m-%d")
         tomorrow_str = (now + timedelta(days=1)).strftime("%Y-%m-%d")
         
-        # Calculate next Tuesday
         days_until_tuesday = (1 - now.weekday() + 7) % 7
         if days_until_tuesday == 0:
             days_until_tuesday = 7
         next_tuesday_str = (now + timedelta(days=days_until_tuesday)).strftime("%Y-%m-%d")
 
-        # Pre-seeded schedule events
-        self._events: List[Dict[str, Any]] = [
+        default_events = [
             {
                 "id": "event_1",
                 "title": "Daily Engineering Standup",
@@ -58,7 +66,27 @@ class LocalCalendarService:
                 "description": "Deep dive into LangGraph micro-agents."
             }
         ]
-        self._reminders: List[Dict[str, Any]] = []
+
+        if os.path.exists(DATA_FILE):
+            try:
+                with open(DATA_FILE, "r", encoding="utf-8") as f:
+                    saved = json.load(f)
+                    self._events = saved.get("events", default_events)
+                    self._reminders = saved.get("reminders", [])
+                    return
+            except Exception as e:
+                print(f"[LocalCalendarService] Disk load warning: {e}")
+
+        self._events = default_events
+        self._save_to_disk()
+
+    def _save_to_disk(self):
+        """Save current calendar events and reminders to disk."""
+        try:
+            with open(DATA_FILE, "w", encoding="utf-8") as f:
+                json.dump({"events": self._events, "reminders": self._reminders}, f, indent=2)
+        except Exception as e:
+            print(f"[LocalCalendarService] Disk save warning: {e}")
 
     def get_events(self, date_str: Optional[str] = None) -> List[Dict[str, Any]]:
         """Get events for a specific date (YYYY-MM-DD) or all upcoming events if date_str is None."""
@@ -67,9 +95,7 @@ class LocalCalendarService:
         return [event for event in self._events if event["date"] == date_str]
 
     def find_available_slots(self, date_str: str, duration_minutes: int = 30) -> List[Dict[str, Any]]:
-        """
-        Find available time slots on a given date during working hours (09:00 - 17:00).
-        """
+        """Find available time slots on a given date during working hours (09:00 - 17:00)."""
         existing_events = self.get_events(date_str)
         busy_times = []
         for event in existing_events:
@@ -107,10 +133,9 @@ class LocalCalendarService:
         return available_slots
 
     def create_event(self, title: str, date_str: str, start_time: str, end_time: str, attendees: List[str], description: str = "") -> Dict[str, Any]:
-        """Create a new calendar event and generate 1-click Google Calendar sync URL."""
+        """Create a new calendar event, save to disk, and generate 1-click Google Calendar sync URL."""
         event_id = f"event_{uuid.uuid4().hex[:6]}"
         
-        # Real Google Calendar sync details
         real_details = real_calendar_service.create_event(
             title=title,
             date_str=date_str,
@@ -132,10 +157,11 @@ class LocalCalendarService:
             "created_at": datetime.now().strftime("%Y-%m-%d %H:%M")
         }
         self._events.append(event)
+        self._save_to_disk()
         return event
 
     def create_reminder(self, title: str, date_time_str: str) -> Dict[str, Any]:
-        """Create a quick task reminder."""
+        """Create a quick task reminder and save to disk."""
         reminder_id = f"rem_{uuid.uuid4().hex[:6]}"
         reminder = {
             "id": reminder_id,
@@ -144,7 +170,7 @@ class LocalCalendarService:
             "created_at": datetime.now().strftime("%Y-%m-%d %H:%M")
         }
         self._reminders.append(reminder)
+        self._save_to_disk()
         return reminder
 
-# Global singleton instance for local testing
 calendar_service = LocalCalendarService()

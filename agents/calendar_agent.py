@@ -71,21 +71,18 @@ def _extract_calendar_event_details(query: str) -> Dict[str, Any]:
     person_name = None
 
     if "birthday" in query_lower:
-        # Check for name after 'of' or 'for' or 'is'
         for marker in ["of ", "for ", "is "]:
             if marker in query_lower:
                 idx = query_lower.find(marker) + len(marker)
                 person_name = query[idx:].strip().strip(".,!?")
                 break
         if not person_name:
-            # Fallback regex for two capitalized words or single word
             words = query.split()
             if len(words) >= 2:
                 person_name = " ".join(words[-2:])
 
         title = f"Birthday - {person_name}" if person_name else "Birthday Celebration"
     else:
-        # General meeting / event title extraction
         for marker in ["with ", "to ", "meeting ", "for "]:
             if marker in query_lower:
                 idx = query_lower.find(marker) + len(marker)
@@ -99,7 +96,6 @@ def _extract_calendar_event_details(query: str) -> Dict[str, Any]:
         else:
             title = "Scheduled Meeting"
 
-    # Resolve contact email if not explicitly provided
     if not attendee_email and person_name:
         contact_res = contact_lookup_tool.invoke({"name": person_name.split()[0]})
         contact_emails = re.findall(r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}', contact_res)
@@ -125,13 +121,26 @@ def calendar_agent_node(state: AgentState) -> Dict[str, Any]:
     """
     intent = state.get("detected_intent")
     query = state.get("user_query", "")
+    query_lower = query.lower()
     log = state.get("execution_log", []) + [f"Node [calendar_agent]: Processing calendar workflow for intent '{intent}'"]
     
     updates: Dict[str, Any] = {"execution_log": log}
     
     if intent == IntentType.CHECK_SCHEDULE.value:
-        schedule_output = get_schedule_tool.invoke({"date": ""})
-        updates["final_response"] = f"Your upcoming calendar schedule:\n\n{schedule_output}"
+        target_date = _parse_explicit_date(query)
+        # Check if query specifically mentioned a date/day vs asking for general upcoming schedule
+        has_specific_date = (
+            any(m in query_lower for m in _MONTHS_MAP.keys()) or 
+            any(rel in query_lower for rel in ["today", "tomorrow", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]) or
+            bool(re.search(r'\b\d{1,2}(st|nd|rd|th)?\b', query_lower))
+        )
+        
+        if has_specific_date:
+            schedule_output = get_schedule_tool.invoke({"date": target_date})
+            updates["final_response"] = f"Your schedule for {target_date}:\n\n{schedule_output}"
+        else:
+            schedule_output = get_schedule_tool.invoke({"date": ""})
+            updates["final_response"] = f"Your upcoming calendar schedule:\n\n{schedule_output}"
 
     elif intent == IntentType.FIND_SLOTS.value:
         target_date = _parse_explicit_date(query)

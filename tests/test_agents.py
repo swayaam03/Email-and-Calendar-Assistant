@@ -28,6 +28,11 @@ def test_intent_classifier_add_birthday():
     res = classify_intent_node(state)
     assert res["detected_intent"] == IntentType.SCHEDULE_MEETING.value
 
+def test_intent_classifier_typo_scedule():
+    state = create_initial_state("What is my scedule for 30th july")
+    res = classify_intent_node(state)
+    assert res["detected_intent"] == IntentType.CHECK_SCHEDULE.value
+
 def test_email_agent_read():
     state = create_initial_state("Summarize today's unread emails.")
     state["detected_intent"] = IntentType.SUMMARIZE_INBOX.value
@@ -48,6 +53,12 @@ def test_calendar_agent_check_schedule():
     state["detected_intent"] = IntentType.CHECK_SCHEDULE.value
     res = calendar_agent_node(state)
     assert "Daily Engineering Standup" in res["final_response"]
+
+def test_calendar_agent_check_scedule_typo():
+    state = create_initial_state("What is my scedule for 30th july")
+    state["detected_intent"] = IntentType.CHECK_SCHEDULE.value
+    res = calendar_agent_node(state)
+    assert "2026-07-30" in res["final_response"]
 
 def test_calendar_agent_schedule_meeting_approval_trigger():
     state = create_initial_state("Schedule a meeting with Rahul next Tuesday afternoon.")

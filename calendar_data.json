@@ -1,0 +1,63 @@
+{
+  "events": [
+    {
+      "id": "event_1",
+      "title": "Daily Engineering Standup",
+      "date": "2026-07-28",
+      "start_time": "10:00",
+      "end_time": "10:30",
+      "attendees": [
+        "team@techcorp.com"
+      ],
+      "description": "Daily sync on agentic AI milestones."
+    },
+    {
+      "id": "event_2",
+      "title": "Strategy Alignment Session",
+      "date": "2026-07-29",
+      "start_time": "10:00",
+      "end_time": "11:30",
+      "attendees": [
+        "john.doe@company.org"
+      ],
+      "description": "Q3 strategy planning meeting."
+    },
+    {
+      "id": "event_3",
+      "title": "Client Sync",
+      "date": "2026-08-04",
+      "start_time": "10:00",
+      "end_time": "11:00",
+      "attendees": [
+        "client@external.com"
+      ],
+      "description": "Weekly status update with client."
+    },
+    {
+      "id": "event_4",
+      "title": "Architecture Workshop",
+      "date": "2026-08-04",
+      "start_time": "16:00",
+      "end_time": "17:00",
+      "attendees": [
+        "architecture-group@techcorp.com"
+      ],
+      "description": "Deep dive into LangGraph micro-agents."
+    },
+    {
+      "id": "event_dca687",
+      "title": "Test Meeting",
+      "date": "2026-08-01",
+      "start_time": "14:00",
+      "end_time": "14:30",
+      "attendees": [
+        "rahul@test.com",
+        "sarah@test.com"
+      ],
+      "description": "Quick sync",
+      "gcal_link": "https://calendar.google.com/calendar/render?action=TEMPLATE&text=Test+Meeting&dates=20260801T140000%2F20260801T143000&details=Quick+sync&add=rahul%40test.com%2C+sarah%40test.com",
+      "created_at": "2026-07-28 18:02"
+    }
+  ],
+  "reminders": []
+}
