@@ -275,60 +275,15 @@ Email sent successfully via SMTP.
 
 ---
 
-### Option 2: FastAPI REST API Web Server
-
-Launch the web server:
-
-```bash
-uvicorn api.main:app --reload --port 8000
-```
-
-- **Interactive Swagger Docs**: `http://localhost:8000/docs`
-- **Health Check**: `GET http://localhost:8000/health`
-- **Execute Task Endpoint**: `POST http://localhost:8000/api/v1/agent/run`
-  ```json
-  {
-    "user_query": "Summarize unread emails",
-    "thread_id": "web_thread_1"
-  }
-  ```
-- **Submit Human Approval Endpoint**: `POST http://localhost:8000/api/v1/agent/approve`
-  ```json
-  {
-    "thread_id": "web_thread_1",
-    "approval_status": "APPROVED"
-  }
-  ```
-
----
-
-## Running Automated Tests
-
-Run the complete 35-test verification suite covering services, tools, agents, graph execution, and REST endpoints:
-
-```bash
-python -m pytest tests/ -v
-```
-
 ---
 
 ## Future Roadmap & Planned Improvements
 
 ### 1. Agent Response & Natural Language Enhancements
-- **Dynamic LLM Response Synthesis**: Enhance final response generation using multi-step LLM post-synthesis to transform raw service and tool outputs into highly articulate executive briefings.
-- **Context-Aware Email Reply Drafting**: Incorporate email thread sentiment analysis and historical interaction memory to generate tone-matched responses (formal, friendly, concise).
-- **Multi-Turn Conversational Pruning**: Integrate LangChain message windowing (`trim_messages`) and state compression nodes to sustain long multi-turn sessions without exceeding free tier token limits.
 
 ### 2. CLI Interface & User Experience (UX) Enhancements
-- **Rich Terminal Styling**: Upgrade the command-line interface using Python's `rich` and `prompt_toolkit` packages to render styled panels, color-coded status badges, and formatted output containers.
-- **Interactive ASCII Tables**: Display retrieved inbox summaries and calendar schedules inside clean interactive tables.
-- **Progress Spinners & Status Indicators**: Add real-time loading spinners during OpenRouter LLM invocations and graph state transitions.
 
 ### 3. Extended Integrations & Enterprise Features
-- **Microsoft Outlook & Office 365 Support**: Extend the service abstraction layer to support Microsoft Graph API for Outlook email and calendar management.
-- **Slack & Microsoft Teams Notifications**: Implement webhook integrations allowing real-time Human-in-the-Loop approvals directly via Slack interactive buttons.
-- **Voice Command Interface**: Integrate speech-to-text input processing and text-to-speech audio executive briefings.
-- **Multi-Agent Swarm Architecture**: Expand the pipeline into dedicated sub-agent graphs (Email Supervisor, Calendar Supervisor, Task Agent) managed by a Master Executive Supervisor Graph.
 
 ---
 
