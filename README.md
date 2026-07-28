@@ -1,12 +1,12 @@
-# 🤖 AI Email & Calendar Assistant using LangGraph
+# AI Email & Calendar Assistant using LangGraph
 
 An autonomous, token-efficient AI Executive Assistant capable of managing emails, calendar events, scheduling meetings, drafting replies, summarizing inboxes, and constructing daily productivity plans.
 
-This is **NOT a simple chatbot** and **NOT just a wrapper around API endpoints**. It is a full-fledged **Agentic AI system** built with **LangGraph** that reasons about user intent, plans actions, interacts with external/local services, and enforces **Human-in-the-Loop (HITL)** approval before performing mutating real-world actions.
+This is **not a simple chatbot** and **not a basic API wrapper**. It is a production-grade **Agentic AI system** built with **LangGraph** that reasons about user intent, plans multi-step workflows, interacts with external and local services, and enforces **Human-in-the-Loop (HITL)** safety approvals before executing mutating real-world actions.
 
 ---
 
-## 📐 System Architecture & Agent Workflow
+## System Architecture & Agent Workflow
 
 ### 1. High-Level System Architecture
 
@@ -81,35 +81,35 @@ sequenceDiagram
 
 ---
 
-## 🎓 Key Technical Learnings
+## Key Technical Learnings
 
-Through building this project from scratch, you have mastered:
+Through building this project from scratch, the following concepts were implemented:
 
 ### 1. Autonomous Agentic AI vs Chatbots
-- **Chatbots** simply output text responses sequentially.
-- **Agentic AI Systems** maintain state, make multi-step decisions, execute external tools, handle conditional branches, and pause for human authorization before altering external state.
+- **Chatbots** output sequential text responses without stateful workflow management.
+- **Agentic AI Systems** maintain persistent state, execute tool calls autonomously, handle conditional routing branches, and halt for human confirmation before altering external resources.
 
 ### 2. LangGraph State Orchestration
-- **`AgentState` TypedDict Design**: Using `Annotated[List[Any], add_messages]` to automatically append chat messages while isolating intent, email contexts, calendar availability, and HITL flags.
-- **Conditional Edge Routing**: Routing nodes dynamically based on intent (`route_intent`) and execution status (`route_after_agent`).
-- **Thread State Persistence**: Using `MemorySaver()` checkpointer to save state across turns and inspect active execution graph states.
+- **`AgentState` TypedDict Design**: Uses `Annotated[List[Any], add_messages]` to handle conversation history while isolating intent, email contexts, calendar availability, and HITL flags.
+- **Conditional Edge Routing**: Dynamically routes execution between nodes based on detected intent (`route_intent`) and execution status (`route_after_agent`).
+- **Thread State Persistence**: Utilizes the `MemorySaver()` checkpointer to persist thread state across execution turns and interrupts.
 
 ### 3. Production Human-in-the-Loop (HITL) Execution
-- Using native **`langgraph.types.interrupt()`** to safely pause graph execution when a mutating tool (e.g. `send_email_tool`, `create_event_tool`) is proposed.
-- Resuming graph execution state cleanly using **`Command(resume={"approval_status": "APPROVED" | "REJECTED"})`**.
+- Leverages native **`langgraph.types.interrupt()`** to pause graph execution whenever a mutating tool (such as `send_email_tool` or `create_event_tool`) is invoked.
+- Resumes graph execution cleanly using **`Command(resume={"approval_status": "APPROVED" | "REJECTED"})`**.
 
 ### 4. Token Efficiency Strategies
-- **Context Pruning**: Truncating email bodies to 400 characters max before feeding into prompts.
-- **Offloading Calculations**: Using local Python utility tools (`resolve_relative_date_tool`, `contact_lookup_tool`) for date math and contact matching instead of burning LLM tokens.
-- **Snippet-Level State**: Passing lightweight JSON payloads in `AgentState` rather than full raw conversation transcripts.
+- **Context Pruning**: Limits email bodies to a maximum of 400 characters prior to prompt insertion.
+- **Computation Offloading**: Uses deterministic Python helper tools (`resolve_relative_date_tool`, `contact_lookup_tool`) for date resolution and contact lookups to save LLM tokens.
+- **Structured State**: Transmits lightweight JSON payloads inside `AgentState` rather than raw message transcripts.
 
 ### 5. Clean Architecture & Service Layer Abstraction
-- Decoupled business logic: LangGraph agents invoke tools, tools consume services, and services handle data sources.
-- **Zero-Dependency Fallback**: Allows switching seamlessly between a local sandbox database and real **IMAP (SSL) / SMTP (TLS)** email without modifying agents or graph routing.
+- Decouples core logic into distinct layers: LangGraph agents call tools, tools call services, and services interact with data sources.
+- **Dynamic Fallback**: Seamlessly switches between a local sandbox database and real **IMAP (SSL) / SMTP (TLS)** email integrations without modifying graph nodes or routing logic.
 
 ---
 
-## 🗂 Project Directory Structure
+## Project Directory Structure
 
 ```
 d:/Swayam/Projects/Agentic AI/Email and Calendar Assistant/
@@ -117,9 +117,9 @@ d:/Swayam/Projects/Agentic AI/Email and Calendar Assistant/
 ├── .gitignore                    # Security check: excludes secrets, .env, DBs, logs
 ├── .env.example                  # Environment configuration template
 ├── .env                          # Local credentials (OpenRouter API key, IMAP/SMTP)
-├── requirements.txt              # Lightweight production dependencies
-├── README.md                     # Comprehensive documentation & system design
-├── main.py                       # Interactive CLI entrypoint with real-time HITL prompts
+├── requirements.txt              # Production dependencies
+├── README.md                     # Documentation & system design
+├── main.py                       # Interactive CLI entrypoint with HITL prompting
 │
 ├── config/                       # Application configuration & constants
 │   ├── __init__.py
@@ -154,7 +154,7 @@ d:/Swayam/Projects/Agentic AI/Email and Calendar Assistant/
 │
 ├── agents/                       # Specialized Sub-Agent Reasoning Nodes
 │   ├── __init__.py
-│   ├── intent_classifier.py      # Hybrid zero-token rule-based & LLM fallback classifier
+│   ├── intent_classifier.py      # Hybrid rule-based & LLM fallback classifier
 │   ├── email_agent.py            # Dynamic recipient/body extraction & email logic
 │   ├── calendar_agent.py         # Slot availability & event creation logic
 │   └── planner_agent.py          # Daily executive productivity planner
@@ -181,7 +181,7 @@ d:/Swayam/Projects/Agentic AI/Email and Calendar Assistant/
 
 ---
 
-## 🛠 Tools Reference
+## Tools Reference
 
 | Tool Name | Category | Mutating? | Description |
 | :--- | :--- | :---: | :--- |
@@ -198,7 +198,7 @@ d:/Swayam/Projects/Agentic AI/Email and Calendar Assistant/
 
 ---
 
-## ⚙️ Installation & Setup
+## Installation & Setup
 
 ### 1. Clone & Install Dependencies
 
@@ -239,9 +239,9 @@ PORT=8000
 
 ---
 
-## 🚀 Running the Assistant
+## Running the Assistant
 
-### Option 1: Interactive Terminal CLI (Recommended)
+### Option 1: Interactive Terminal CLI
 
 Run the CLI for real-time natural language interaction with interactive Human-in-the-Loop prompts:
 
@@ -251,13 +251,11 @@ python main.py
 
 **Example CLI Interaction**:
 ```text
-👤 You: Send an email to swayam.kandarkar@student.sfit.ac.in saying I'll not attend today's lecture
+You: Send an email to swayam.kandarkar@student.sfit.ac.in saying I'll not attend today's lecture
 
-⚙️ Processing request...
+Processing request...
 
-⚠️ ⚠️ ⚠️ ⚠️ ⚠️ ⚠️ ⚠️ ⚠️ ⚠️ ⚠️ ⚠️ ⚠️ ⚠️ ⚠️ ⚠️ 
 HUMAN-IN-THE-LOOP APPROVAL REQUIRED
-⚠️ ⚠️ ⚠️ ⚠️ ⚠️ ⚠️ ⚠️ ⚠️ ⚠️ ⚠️ ⚠️ ⚠️ ⚠️ ⚠️ ⚠️ 
 Action Proposed: send_email_tool
 Details: {
   'to_email': 'swayam.kandarkar@student.sfit.ac.in',
@@ -271,8 +269,8 @@ Do you approve executing this action? (y/n): y
 
 Submitting decision: APPROVED...
 
-🤖 Assistant: ✅ ACTION EXECUTED (APPROVED):
-Email sent successfully via SMTP!
+Assistant: ACTION EXECUTED (APPROVED):
+Email sent successfully via SMTP.
 ```
 
 ---
@@ -304,7 +302,7 @@ uvicorn api.main:app --reload --port 8000
 
 ---
 
-## 🧪 Running Automated Tests
+## Running Automated Tests
 
 Run the complete 35-test verification suite covering services, tools, agents, graph execution, and REST endpoints:
 
@@ -312,10 +310,8 @@ Run the complete 35-test verification suite covering services, tools, agents, gr
 python -m pytest tests/ -v
 ```
 
-**Expected Result**: `35 passed in ~2.0s` 💯
-
 ---
 
-## 📜 License
+## License
 
 This project is open-source and available under the [MIT License](LICENSE).
