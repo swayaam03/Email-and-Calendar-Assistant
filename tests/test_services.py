@@ -1,0 +1,58 @@
+import pytest
+from datetime import datetime, timedelta
+from services.local_email_service import LocalEmailService
+from services.local_calendar_service import LocalCalendarService
+
+def test_unread_emails_fetching():
+    service = LocalEmailService()
+    unread = service.get_unread_emails(limit=5)
+    assert len(unread) > 0
+    for email in unread:
+        assert email["is_unread"] is True
+        assert "subject" in email
+        assert "sender" in email
+
+def test_email_search():
+    service = LocalEmailService()
+    results = service.search_emails("Rahul")
+    assert len(results) > 0
+    assert "Rahul" in results[0]["sender_name"] or "Rahul" in results[0]["body"]
+
+def test_email_draft_and_send():
+    service = LocalEmailService()
+    draft = service.create_draft("test@example.com", "Test Subject", "Test Body")
+    assert draft["draft_id"].startswith("draft_")
+    
+    sent = service.send_email("test@example.com", "Test Subject", "Test Body")
+    assert sent["id"].startswith("sent_")
+    assert sent["status"] == "SENT"
+
+def test_calendar_events_and_slots():
+    service = LocalCalendarService()
+    events = service.get_events()
+    assert len(events) > 0
+    
+    now = datetime.now()
+    days_until_tuesday = (1 - now.weekday() + 7) % 7
+    if days_until_tuesday == 0:
+        days_until_tuesday = 7
+    next_tuesday_str = (now + timedelta(days=days_until_tuesday)).strftime("%Y-%m-%d")
+    
+    available_slots = service.find_available_slots(next_tuesday_str, duration_minutes=30)
+    assert len(available_slots) > 0
+    # Next Tuesday afternoon (14:00 - 14:30) should be available since events are at 10:00 and 16:00
+    slot_times = [s["start_time"] for s in available_slots]
+    assert "14:00" in slot_times
+
+def test_calendar_create_event():
+    service = LocalCalendarService()
+    today_str = datetime.now().strftime("%Y-%m-%d")
+    event = service.create_event(
+        title="Sync with Rahul",
+        date_str=today_str,
+        start_time="14:00",
+        end_time="14:30",
+        attendees=["rahul@techcorp.com"]
+    )
+    assert event["id"].startswith("event_")
+    assert event["title"] == "Sync with Rahul"
