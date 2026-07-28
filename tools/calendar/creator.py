@@ -1,7 +1,6 @@
 from langchain_core.tools import tool
 from services.local_calendar_service import calendar_service
 
-
 @tool
 def create_event_tool(
     title: str,
@@ -33,10 +32,13 @@ def create_event_tool(
         description=description,
     )
     attendee_str = ", ".join(event["attendees"])
+    gcal_sync = event.get("gcal_link", "")
+    
     return (
         f"Calendar event created successfully.\n"
         f"  Event ID: {event['id']}\n"
         f"  Title: {event['title']}\n"
         f"  Date: {event['date']}  |  {event['start_time']} - {event['end_time']}\n"
-        f"  Attendees: {attendee_str}"
+        f"  Attendees: {attendee_str}\n"
+        f"  Sync to Google Calendar: {gcal_sync}"
     )

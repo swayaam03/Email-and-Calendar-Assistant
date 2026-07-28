@@ -1,10 +1,11 @@
 import uuid
 from datetime import datetime, timedelta
 from typing import List, Dict, Any, Optional
+from services.real_calendar_service import real_calendar_service
 
 class LocalCalendarService:
     """
-    A zero-config, in-memory Google Calendar replacement service.
+    In-memory calendar service enhanced with 1-click Google Calendar sync links.
     Handles schedule viewing, free/busy slot detection, and event creation.
     """
     def __init__(self):
@@ -76,7 +77,6 @@ class LocalCalendarService:
             e_hour, e_min = map(int, event["end_time"].split(":"))
             busy_times.append((s_hour * 60 + s_min, e_hour * 60 + e_min))
         
-        # Working hours: 09:00 (540 min) to 17:00 (1020 min)
         work_start = 9 * 60
         work_end = 17 * 60
         available_slots = []
@@ -86,7 +86,6 @@ class LocalCalendarService:
             slot_start = current_time
             slot_end = current_time + duration_minutes
             
-            # Check overlap with any busy time
             is_overlap = False
             for b_start, b_end in busy_times:
                 if not (slot_end <= b_start or slot_start >= b_end):
@@ -103,13 +102,24 @@ class LocalCalendarService:
                     "duration_minutes": duration_minutes
                 })
             
-            current_time += 30 # Check in 30 min steps
+            current_time += 30
             
         return available_slots
 
     def create_event(self, title: str, date_str: str, start_time: str, end_time: str, attendees: List[str], description: str = "") -> Dict[str, Any]:
-        """Create a new calendar event (Mutating action)."""
+        """Create a new calendar event and generate 1-click Google Calendar sync URL."""
         event_id = f"event_{uuid.uuid4().hex[:6]}"
+        
+        # Real Google Calendar sync details
+        real_details = real_calendar_service.create_event(
+            title=title,
+            date_str=date_str,
+            start_time=start_time,
+            end_time=end_time,
+            attendees=attendees,
+            description=description
+        )
+        
         event = {
             "id": event_id,
             "title": title,
@@ -118,6 +128,7 @@ class LocalCalendarService:
             "end_time": end_time,
             "attendees": attendees,
             "description": description,
+            "gcal_link": real_details["gcal_link"],
             "created_at": datetime.now().strftime("%Y-%m-%d %H:%M")
         }
         self._events.append(event)

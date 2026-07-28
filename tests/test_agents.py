@@ -23,6 +23,11 @@ def test_intent_classifier_schedule_meeting():
     res = classify_intent_node(state)
     assert res["detected_intent"] == IntentType.SCHEDULE_MEETING.value
 
+def test_intent_classifier_add_birthday():
+    state = create_initial_state("can u add a birthday at 30th July of Dakshita Kandarkar")
+    res = classify_intent_node(state)
+    assert res["detected_intent"] == IntentType.SCHEDULE_MEETING.value
+
 def test_email_agent_read():
     state = create_initial_state("Summarize today's unread emails.")
     state["detected_intent"] = IntentType.SUMMARIZE_INBOX.value
