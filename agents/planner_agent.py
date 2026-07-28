@@ -3,15 +3,23 @@ from datetime import datetime
 from state.agent_state import AgentState
 from services.local_email_service import email_service
 from services.local_calendar_service import calendar_service
+from llm.openrouter_client import get_openrouter_llm
+from langchain_core.messages import SystemMessage, HumanMessage
+
+SYSTEM_GENERAL_ASSISTANT_PROMPT = """You are an Executive AI Assistant.
+Respond politely, concisely, and helpfully to the user's query.
+If they are asking a general question, answer directly.
+If they are greeting you, greet them professionally.
+Keep your response under 100 words.
+"""
 
 def planner_agent_node(state: AgentState) -> Dict[str, Any]:
     """
-    LangGraph node for constructing a Daily Productivity Plan or handling General Queries.
-    Combines inbox highlights with today's calendar schedule.
+    LangGraph node for constructing a Daily Productivity Plan or dynamically answering General Queries via OpenRouter LLM.
     """
     intent = state.get("detected_intent")
     query = state.get("user_query", "")
-    log = state.get("execution_log", []) + [f"Node [planner_agent]: Synthesizing executive plan for intent '{intent}'"]
+    log = state.get("execution_log", []) + [f"Node [planner_agent]: Processing request for intent '{intent}'"]
     
     updates: Dict[str, Any] = {"execution_log": log}
     
@@ -22,7 +30,7 @@ def planner_agent_node(state: AgentState) -> Dict[str, Any]:
         
         # Build structured daily plan
         lines = [
-            f"📅 DAILY EXECUTIVE PLAN ({today_str})",
+            f"DAILY EXECUTIVE PLAN ({today_str})",
             "----------------------------------------",
             "1. TODAY'S SCHEDULED MEETINGS:"
         ]
@@ -30,7 +38,7 @@ def planner_agent_node(state: AgentState) -> Dict[str, Any]:
             for ev in events:
                 lines.append(f"   • {ev['start_time']} - {ev['end_time']}: {ev['title']}")
         else:
-            lines.append("   • No scheduled meetings for today. Open calendar!")
+            lines.append("   • No scheduled meetings for today.")
             
         lines.append("\n2. HIGH PRIORITY UNREAD EMAILS:")
         if unread_emails:
@@ -46,11 +54,15 @@ def planner_agent_node(state: AgentState) -> Dict[str, Any]:
         plan_output = "\n".join(lines)
         updates["final_response"] = plan_output
     else:
-        # General query response
-        updates["final_response"] = (
-            f"I am your AI Executive Assistant. I understood your query: '{query}'. "
-            "I can manage your unread emails, draft replies, check your calendar schedule, "
-            "find open meeting slots, and construct daily productivity plans."
-        )
+        # Dynamic LLM response for general queries (No hardcoded text)
+        try:
+            llm = get_openrouter_llm(temperature=0.7)
+            response = llm.invoke([
+                SystemMessage(content=SYSTEM_GENERAL_ASSISTANT_PROMPT),
+                HumanMessage(content=query)
+            ])
+            updates["final_response"] = response.content.strip()
+        except Exception:
+            updates["final_response"] = f"I am your AI Executive Assistant. How can I help you manage your emails, calendar, or daily plan today?"
         
     return updates

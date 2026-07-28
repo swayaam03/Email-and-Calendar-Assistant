@@ -15,7 +15,8 @@ def _extract_email_details(query: str) -> Dict[str, str]:
     """
     Dynamically extract recipient email, subject, and body from user query.
     1. Checks regex for explicit email addresses (e.g. user@domain.com).
-    2. Uses LLM / rule parsing to generate appropriate subject & body matching query context.
+    2. Uses contact lookup and search to resolve recipient addresses.
+    3. Extracts message payload and generates contextual subject and body.
     """
     # 1. Look for explicit email addresses in the user query
     emails_found = re.findall(r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}', query)
@@ -24,7 +25,6 @@ def _extract_email_details(query: str) -> Dict[str, str]:
     # 2. Extract recipient name if no explicit email address
     recipient_name = None
     if not target_email:
-        # Check contact lookup or search
         words = query.split()
         for i, word in enumerate(words):
             if word.lower() in ["to", "reply", "email", "with"]:
@@ -45,7 +45,7 @@ def _extract_email_details(query: str) -> Dict[str, str]:
                     target_email = search_res[0]["sender"]
 
     if not target_email:
-        target_email = "john.doe@company.org"
+        target_email = f"{recipient_name.lower()}@example.com" if recipient_name else "recipient@example.com"
 
     # 3. Extract custom message payload from query (e.g. "saying ...")
     message_text = None
