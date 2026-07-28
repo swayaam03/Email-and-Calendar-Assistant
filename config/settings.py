@@ -13,6 +13,14 @@ class Settings(BaseSettings):
     MAX_HISTORY_MESSAGES: int = 6
     MAX_EMAIL_BODY_LENGTH: int = 400
     
+    # Real IMAP/SMTP Email credentials (Option A)
+    EMAIL_ADDRESS: Optional[str] = None
+    EMAIL_APP_PASSWORD: Optional[str] = None
+    IMAP_SERVER: str = "imap.gmail.com"
+    IMAP_PORT: int = 993
+    SMTP_SERVER: str = "smtp.gmail.com"
+    SMTP_PORT: int = 587
+    
     # Application settings
     APP_ENV: str = "development"
     DEBUG: bool = True

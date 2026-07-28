@@ -1,6 +1,7 @@
 import uuid
 from datetime import datetime, timedelta
 from typing import List, Dict, Any, Optional
+from services.real_email_service import real_email_service
 
 class LocalEmailService:
     """
@@ -63,16 +64,29 @@ class LocalEmailService:
         self._sent_emails: List[Dict[str, Any]] = []
 
     def get_unread_emails(self, limit: int = 5) -> List[Dict[str, Any]]:
-        """Fetch all unread emails up to the specified limit."""
+        """Fetch unread emails. Uses RealEmailService if configured, else local storage."""
+        if real_email_service.is_configured():
+            real_emails = real_email_service.get_unread_emails(limit=limit)
+            if real_emails:
+                return real_emails
         unread = [email for email in self._emails if email.get("is_unread", False)]
         return unread[:limit]
 
     def get_all_emails(self, limit: int = 10) -> List[Dict[str, Any]]:
         """Fetch inbox emails up to limit."""
+        if real_email_service.is_configured():
+            real_emails = real_email_service.get_unread_emails(limit=limit)
+            if real_emails:
+                return real_emails
         return self._emails[:limit]
 
     def search_emails(self, query: str, limit: int = 5) -> List[Dict[str, Any]]:
-        """Search emails matching sender, sender_name, subject, or body."""
+        """Search emails matching query."""
+        if real_email_service.is_configured():
+            real_results = real_email_service.search_emails(query, limit=limit)
+            if real_results:
+                return real_results
+
         q = query.lower()
         results = []
         for email in self._emails:
@@ -84,14 +98,17 @@ class LocalEmailService:
         return results[:limit]
 
     def get_email_by_id(self, email_id: str) -> Optional[Dict[str, Any]]:
-        """Find an email by its unique ID."""
+        """Find an email by ID."""
         for email in self._emails:
             if email["id"] == email_id:
                 return email
         return None
 
     def create_draft(self, to_email: str, subject: str, body: str, reply_to_id: Optional[str] = None) -> Dict[str, Any]:
-        """Create a draft reply or new email draft."""
+        """Create a draft reply."""
+        if real_email_service.is_configured():
+            return real_email_service.create_draft(to_email, subject, body, reply_to_id)
+
         draft_id = f"draft_{uuid.uuid4().hex[:6]}"
         draft = {
             "draft_id": draft_id,
@@ -105,7 +122,10 @@ class LocalEmailService:
         return draft
 
     def send_email(self, to_email: str, subject: str, body: str) -> Dict[str, Any]:
-        """Send an email to the recipient (Mutating action)."""
+        """Send an email. Dispatches to real SMTP if configured."""
+        if real_email_service.is_configured():
+            return real_email_service.send_email(to_email, subject, body)
+
         sent_id = f"sent_{uuid.uuid4().hex[:6]}"
         sent_record = {
             "id": sent_id,
@@ -118,5 +138,5 @@ class LocalEmailService:
         self._sent_emails.append(sent_record)
         return sent_record
 
-# Global singleton instance for local testing
+# Global singleton instance
 email_service = LocalEmailService()

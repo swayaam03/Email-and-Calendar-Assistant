@@ -1,3 +1,4 @@
+import re
 from typing import Dict, Any
 from state.agent_state import AgentState
 from config.constants import IntentType
@@ -23,9 +24,7 @@ def calendar_agent_node(state: AgentState) -> Dict[str, Any]:
         updates["final_response"] = f"Your upcoming calendar schedule:\n\n{schedule_output}"
 
     elif intent == IntentType.FIND_SLOTS.value:
-        # Resolve target date expression from query
         date_resolution = resolve_relative_date_tool.invoke({"expression": query})
-        # Extract date from string or default to next Tuesday
         target_date = "2026-08-04"
         if "Resolved date: " in date_resolution:
             target_date = date_resolution.split("Resolved date: ")[1].split(" ")[0]
@@ -34,17 +33,33 @@ def calendar_agent_node(state: AgentState) -> Dict[str, Any]:
         updates["final_response"] = f"Availability results:\n{date_resolution}\n\n{slots_output}"
 
     elif intent == IntentType.SCHEDULE_MEETING.value:
-        # Determine person and date
-        person_name = "Rahul" if "rahul" in query.lower() else ("John" if "john" in query.lower() else "Sarah")
-        contact_res = contact_lookup_tool.invoke({"name": person_name})
-        person_email = "rahul.sharma@techcorp.com" if "rahul" in person_name.lower() else "john.doe@company.org"
+        # Extract explicit email address or contact name
+        emails_found = re.findall(r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}', query)
+        person_email = emails_found[0] if emails_found else None
+        person_name = person_email if person_email else "Rahul"
+
+        if not person_email:
+            words = query.split()
+            for i, word in enumerate(words):
+                if word.lower() in ["with", "to", "meeting"]:
+                    if i + 1 < len(words):
+                        potential = words[i+1].strip(".,!?:;\"'")
+                        if len(potential) > 2 and potential.lower() not in ["the", "a", "an", "next", "tomorrow"]:
+                            person_name = potential
+                            break
+            
+            contact_res = contact_lookup_tool.invoke({"name": person_name})
+            contact_emails = re.findall(r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}', contact_res)
+            if contact_emails:
+                person_email = contact_emails[0]
+            else:
+                person_email = "rahul.sharma@techcorp.com"
         
         date_res = resolve_relative_date_tool.invoke({"expression": query})
         target_date = "2026-08-04"
         if "Resolved date: " in date_res:
             target_date = date_res.split("Resolved date: ")[1].split(" ")[0]
             
-        # Find slot
         slots = calendar_service.find_available_slots(target_date, duration_minutes=30)
         selected_slot = slots[0] if slots else {"start_time": "14:00", "end_time": "14:30"}
         
